@@ -35,10 +35,10 @@ class BayesLearn():
                     self.ham_dirs.append(current_dir)
 
         def train_model(self):
-            self.train_spam(self.spam_dirs, "spam")
-            self.train_spam(self.ham_dirs, "ham")
+            self.bayes_train(self.spam_dirs, "spam")
+            self.bayes_train(self.ham_dirs, "ham")
 
-        def train_spam(self, type_dir, type_mail):
+        def bayes_train(self, type_dir, type_mail):
             for single_dir in type_dir:
                 for file_name in os.listdir(single_dir):
                     file_extension = os.path.splitext(file_name)[1]
@@ -71,9 +71,10 @@ class BayesLearn():
                 # Rest of the lines are words followed by their probabilities given spam and ham separated by spaces
                 for token in self.train_data:
                     try:
+                        token_spam_add_one = (self.train_data[token][0] + 1) / (self.spam_words + len(self.train_data))
+                        token_ham_add_one = (self.train_data[token][1] + 1) / (self.ham_words + len(self.train_data))
                         file_handler.write(
-                            str(token) + ' ' + str(self.train_data[token][0] / self.spam_words) + ' ' + str(
-                                self.train_data[token][1] / self.ham_words) + '\n')
+                            str(token) + ' ' + str(token_spam_add_one) + ' ' + str(token_ham_add_one) + '\n')
                     except:
                         print("exception in writing training data: " + str(token))
                         continue
