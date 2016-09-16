@@ -70,8 +70,13 @@ class BayesLearn():
                 file_handler.write(str(self.ham_files / self.total_files) + '\n')
                 # Rest of the lines are words followed by their probabilities given spam and ham separated by spaces
                 for token in self.train_data:
-                    file_handler.write(str(token) + ' ' + str(self.train_data[token][0] / self.spam_words) + ' ' + str(
-                        self.train_data[token][1] / self.ham_words) + '\n')
+                    try:
+                        file_handler.write(
+                            str(token) + ' ' + str(self.train_data[token][0] / self.spam_words) + ' ' + str(
+                                self.train_data[token][1] / self.ham_words) + '\n')
+                    except:
+                        print("exception in writing training data: " + str(token))
+                        continue
 
     __instance = None
 
