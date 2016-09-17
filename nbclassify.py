@@ -1,5 +1,6 @@
 import argparse
 import os
+import math
 
 __author__ = 'ameya'
 
@@ -37,65 +38,42 @@ class BayesClassify():
                     if line_content[0] in self.train_data:
                         print("duplicate: " + str(line_content[0]))
                     else:
-                        self.train_data[str(line_content[0])] = [float(line_content[1]), float(line_content[2])]
+                        self.train_data[str(line_content[0]).strip()] = [float(line_content[1]), float(line_content[2])]
+            for data in self.train_data:
+                if float(self.train_data[data][0]) == 0.0 or float(self.train_data[data][1]) == 0.0:
+                    print(data)
 
-        # procedure to recursively determine all the spam and ham directories
-        # and store in spam_dirs and ham_dirs
-        def map_spam_ham_dirs(self):
-            for current_dir, dirnames, filenames in os.walk(self.training_dir):
-                last_dir_name = os.path.basename(current_dir)
-                if last_dir_name == "spam":
-                    self.total_files += len(filenames)
-                    self.spam_files += len(filenames)
-                    self.spam_dirs.append(current_dir)
-                elif last_dir_name == "ham":
-                    self.total_files += len(filenames)
-                    self.ham_files += len(filenames)
-                    self.ham_dirs.append(current_dir)
-
-        def train_model(self):
-            self.train_spam(self.spam_dirs, "spam")
-            self.train_spam(self.ham_dirs, "ham")
-
-        def train_spam(self, type_dir, type_mail):
-            for single_dir in type_dir:
-                for file_name in os.listdir(single_dir):
-                    file_extension = os.path.splitext(file_name)[1]
-                    if file_extension != '.txt':
-                        continue
-                    with open(os.path.join(single_dir, file_name), "r", encoding="latin1") as file_handler:
-                        file_content = file_handler.read()
-                        tokens = file_content.split()
-                        for token in tokens:
-                            if type_mail == "spam":
-                                self.spam_words += 1
-                            elif type_mail == "ham":
-                                self.ham_words += 1
-                            if token in self.train_data:
-                                if type_mail == "spam":
-                                    self.train_data[token.strip()][0] += 1
-                                elif type_mail == "ham":
-                                    self.train_data[token.strip()][1] += 1
+        def classify_model(self, write_file):
+            wrong_spam = 0
+            wrong_ham = 0
+            with open(write_file, "w", encoding='latin1') as write_file_handler:
+                for current_dir, dirnames, filenames in os.walk(self.classify_dir):
+                    for file_name in filenames:
+                        file_extension = os.path.splitext(file_name)[1]
+                        if file_extension != '.txt':
+                            continue
+                        with open(os.path.join(current_dir, file_name), "r", encoding="latin1") as read_file_handler:
+                            file_content = read_file_handler.read()
+                            tokens = file_content.split()
+                            prob_spam_word = math.log(self.prob_spam)
+                            prob_ham_word = math.log(self.prob_ham)
+                            for token in tokens:
+                                if token in self.train_data:
+                                    prob_spam_word += math.log(self.train_data[token][0])
+                                    prob_ham_word += math.log(self.train_data[token][1])
+                            if prob_spam_word > prob_ham_word:
+                                if "ham" in file_name:
+                                    wrong_spam += 1
+                                write_file_handler.write("spam " + str(os.path.join(current_dir, file_name)) + '\n')
+                            elif prob_ham_word > prob_spam_word:
+                                if "spam" in file_name:
+                                    wrong_ham += 1
+                                write_file_handler.write("ham " + str(os.path.join(current_dir, file_name)) + '\n')
                             else:
-                                if type_mail == "spam":
-                                    self.train_data[token.strip()] = [1, 0]
-                                elif type_mail == "ham":
-                                    self.train_data[token.strip()] = [0, 1]
-
-        def write_training_data(self, write_file):
-            with open(write_file, "w", encoding='latin1') as file_handler:
-                # The first 2 lines are probabilities of spam and ham respectively
-                file_handler.write(str(self.spam_files / self.total_files) + '\n')
-                file_handler.write(str(self.ham_files / self.total_files) + '\n')
-                # Rest of the lines are words followed by their probabilities given spam and ham separated by spaces
-                for token in self.train_data:
-                    try:
-                        file_handler.write(
-                            str(token) + ' ' + str(self.train_data[token][0] / self.spam_words) + ' ' + str(
-                                self.train_data[token][1] / self.ham_words) + '\n')
-                    except:
-                        print("exception in writing training data: " + str(token))
-                        continue
+                                print("neither spam or ham: " + str(os.path.join(current_dir, file_name)) + " " + str(
+                                    prob_spam_word) + " " + str(prob_ham_word))
+            print("wrong spam: " + str(wrong_spam))
+            print("wrong ham: " + str(wrong_ham))
 
     __instance = None
 
@@ -122,6 +100,7 @@ if __name__ == '__main__':
     classify_instance = BayesClassify()
     classify_instance.set_classify_dir(get_classify_dir())
     classify_instance.cache_training_model('nbmodel.txt')
+    classify_instance.classify_model('nboutput.txt')
     # classify_instance.map_spam_ham_dirs()
     # classify_instance.train_model()
     # classify_instance.write_training_data('nbmodel.txt')
