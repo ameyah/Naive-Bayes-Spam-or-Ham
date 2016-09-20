@@ -16,9 +16,16 @@ class BayesLearn():
             self.train_data = dict()
             self.spam_words = 0
             self.ham_words = 0
+            self.train_less = 0
+            self.less_files = 0
+            self.less_spam_files = 0
+            self.less_ham_files = 0
 
         def set_training_dir(self, training_dir):
             self.training_dir = training_dir
+
+        def set_train_type(self, train_less):
+            self.train_less = train_less
 
         # procedure to recursively determine all the spam and ham directories
         # and store in spam_dirs and ham_dirs
@@ -33,7 +40,10 @@ class BayesLearn():
                     self.total_files += len(filenames)
                     self.ham_files += len(filenames)
                     self.ham_dirs.append(current_dir)
-
+            if self.train_less:
+                self.less_files = int(0.1 * self.total_files)
+                self.less_spam_files = int(self.less_files / 2)
+                self.less_ham_files = self.less_files - self.less_spam_files
 
         def train_model(self):
             self.bayes_train(self.spam_dirs, "spam")
@@ -46,6 +56,17 @@ class BayesLearn():
                     if file_extension != '.txt':
                         continue
                     with open(os.path.join(single_dir, file_name), "r", encoding="latin1") as file_handler:
+                        if self.train_less:
+                            if type_mail == "spam":
+                                if self.less_spam_files > 0:
+                                    self.less_spam_files -= 1
+                                else:
+                                    return
+                            elif type_mail == "ham":
+                                if self.less_ham_files > 0:
+                                    self.less_ham_files -= 1
+                                else:
+                                    return
                         file_content = file_handler.read()
                         tokens = file_content.split()
                         for token in tokens:
@@ -96,17 +117,19 @@ class BayesLearn():
         return setattr(self.__instance, attr, value)
 
 
-def get_training_dir():
+def get_command_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_dir", help='Directory of input training data.')
-    parser.add_argument("-l", "--less", default=0, help='Directory of input training data.')
+    parser.add_argument("-l", "--less", default=0, type=int, help='Directory of input training data.')
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
     train_instance = BayesLearn()
-    train_instance.set_training_dir(get_training_dir())
+    args = get_command_args()
+    train_instance.set_training_dir(args.input_dir)
+    train_instance.set_train_type(args.less)
     train_instance.map_spam_ham_dirs()
     train_instance.train_model()
     train_instance.write_training_data('nbmodel.txt')

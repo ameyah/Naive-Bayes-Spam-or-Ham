@@ -90,7 +90,6 @@ class BayesClassify():
                                     if prob_spam_word > prob_ham_word:
                                         if "ham" in file_name:
                                             wrong_spam += 1
-                                            print("spam " + str(os.path.join(current_dir, file_name)))
                                         write_file_handler.write("spam " + str(os.path.join(current_dir, file_name)) + '\n')
                                     elif prob_ham_word > prob_spam_word:
                                         if "spam" in file_name:
@@ -105,8 +104,8 @@ class BayesClassify():
                                 continue
             except:
                 return
-            # print("wrong spam: " + str(wrong_spam))
-            # print("wrong ham: " + str(wrong_ham))
+            print("wrong spam: " + str(wrong_spam))
+            print("wrong ham: " + str(wrong_ham))
 
     __instance = None
 
@@ -134,6 +133,3 @@ if __name__ == '__main__':
     classify_instance.set_classify_dir(get_classify_dir())
     classify_instance.cache_training_model('nbmodel.txt')
     classify_instance.classify_model('nboutput.txt')
-    # classify_instance.map_spam_ham_dirs()
-    # classify_instance.train_model()
-    # classify_instance.write_training_data('nbmodel.txt')
