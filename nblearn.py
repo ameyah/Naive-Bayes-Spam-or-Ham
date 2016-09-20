@@ -34,6 +34,7 @@ class BayesLearn():
                     self.ham_files += len(filenames)
                     self.ham_dirs.append(current_dir)
 
+
         def train_model(self):
             self.bayes_train(self.spam_dirs, "spam")
             self.bayes_train(self.ham_dirs, "ham")
@@ -65,6 +66,8 @@ class BayesLearn():
 
         def write_training_data(self, write_file):
             with open(write_file, "w", encoding='latin1') as file_handler:
+                if self.total_files == 0:
+                    return
                 # The first 2 lines are probabilities of spam and ham respectively
                 file_handler.write(str(self.spam_files / self.total_files) + '\n')
                 file_handler.write(str(self.ham_files / self.total_files) + '\n')
@@ -76,7 +79,7 @@ class BayesLearn():
                         file_handler.write(
                             str(token) + ' ' + str(token_spam_add_one) + ' ' + str(token_ham_add_one) + '\n')
                     except:
-                        print("exception in writing training data: " + str(token))
+                        # print("exception in writing training data")
                         continue
 
     __instance = None
@@ -96,8 +99,9 @@ class BayesLearn():
 def get_training_dir():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_dir", help='Directory of input training data.')
+    parser.add_argument("-l", "--less", default=0, help='Directory of input training data.')
     args = parser.parse_args()
-    return args.input_dir
+    return args
 
 
 if __name__ == '__main__':
