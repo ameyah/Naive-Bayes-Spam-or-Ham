@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 
 __author__ = 'ameya'
 
@@ -20,12 +21,14 @@ class BayesLearn():
             self.less_files = 0
             self.less_spam_files = 0
             self.less_ham_files = 0
+            self.train_improved = 0
 
         def set_training_dir(self, training_dir):
             self.training_dir = training_dir
 
-        def set_train_type(self, train_less):
+        def set_train_type(self, train_less, train_improved):
             self.train_less = train_less
+            self.train_improved = train_improved
 
         # procedure to recursively determine all the spam and ham directories
         # and store in spam_dirs and ham_dirs
@@ -40,8 +43,8 @@ class BayesLearn():
                     self.total_files += len(filenames)
                     self.ham_files += len(filenames)
                     self.ham_dirs.append(current_dir)
-            if self.train_less:
-                self.less_files = int(0.1 * self.total_files)
+            if self.train_less != 0:
+                self.less_files = int((self.train_less / 100) * self.total_files)
                 self.less_spam_files = int(self.less_files / 2)
                 self.less_ham_files = self.less_files - self.less_spam_files
 
@@ -56,7 +59,7 @@ class BayesLearn():
                     if file_extension != '.txt':
                         continue
                     with open(os.path.join(single_dir, file_name), "r", encoding="latin1") as file_handler:
-                        if self.train_less:
+                        if self.train_less != 0:
                             if type_mail == "spam":
                                 if self.less_spam_files > 0:
                                     self.less_spam_files -= 1
@@ -70,6 +73,9 @@ class BayesLearn():
                         file_content = file_handler.read()
                         tokens = file_content.split()
                         for token in tokens:
+                            if self.train_improved != 0:
+                                if re.match(r'^[_\W]+$', token):
+                                    continue
                             if type_mail == "spam":
                                 self.spam_words += 1
                             elif type_mail == "ham":
@@ -86,22 +92,25 @@ class BayesLearn():
                                     self.train_data[token.strip()] = [0, 1]
 
         def write_training_data(self, write_file):
-            with open(write_file, "w", encoding='latin1') as file_handler:
-                if self.total_files == 0:
-                    return
-                # The first 2 lines are probabilities of spam and ham respectively
-                file_handler.write(str(self.spam_files / self.total_files) + '\n')
-                file_handler.write(str(self.ham_files / self.total_files) + '\n')
-                # Rest of the lines are words followed by their probabilities given spam and ham separated by spaces
-                for token in self.train_data:
-                    try:
-                        token_spam_add_one = (self.train_data[token][0] + 1) / (self.spam_words + len(self.train_data))
-                        token_ham_add_one = (self.train_data[token][1] + 1) / (self.ham_words + len(self.train_data))
-                        file_handler.write(
-                            str(token) + ' ' + str(token_spam_add_one) + ' ' + str(token_ham_add_one) + '\n')
-                    except:
-                        # print("exception in writing training data")
-                        continue
+            try:
+                with open(write_file, "w", encoding='latin1') as file_handler:
+                    if self.total_files == 0:
+                        return
+                    # The first 2 lines are probabilities of spam and ham respectively
+                    file_handler.write(str(self.spam_files / self.total_files) + '\n')
+                    file_handler.write(str(self.ham_files / self.total_files) + '\n')
+                    # Rest of the lines are words followed by their probabilities given spam and ham separated by spaces
+                    for token in self.train_data:
+                        try:
+                            token_spam_add_one = (self.train_data[token][0] + 1) / (self.spam_words + len(self.train_data))
+                            token_ham_add_one = (self.train_data[token][1] + 1) / (self.ham_words + len(self.train_data))
+                            file_handler.write(
+                                str(token) + ' ' + str(token_spam_add_one) + ' ' + str(token_ham_add_one) + '\n')
+                        except:
+                            # print("exception in writing training data")
+                            continue
+            except:
+                return
 
     __instance = None
 
@@ -120,7 +129,9 @@ class BayesLearn():
 def get_command_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_dir", help='Directory of input training data.')
-    parser.add_argument("-l", "--less", default=0, type=int, help='Directory of input training data.')
+    parser.add_argument("-l", "--less", default=0, type=int, help='Add if data is to be trained with only x% data')
+    parser.add_argument("-i", "--improved", default=0, type=int,
+                        help='Add if data is to be trained with with additional strategies other than add one smoothing')
     args = parser.parse_args()
     return args
 
@@ -129,7 +140,7 @@ if __name__ == '__main__':
     train_instance = BayesLearn()
     args = get_command_args()
     train_instance.set_training_dir(args.input_dir)
-    train_instance.set_train_type(args.less)
+    train_instance.set_train_type(args.less, args.improved)
     train_instance.map_spam_ham_dirs()
     train_instance.train_model()
     train_instance.write_training_data('nbmodel.txt')
