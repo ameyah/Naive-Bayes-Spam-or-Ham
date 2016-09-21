@@ -22,6 +22,7 @@ class BayesLearn():
             self.less_spam_files = 0
             self.less_ham_files = 0
             self.train_improved = 0
+            self.stop_words = []
 
         def set_training_dir(self, training_dir):
             self.training_dir = training_dir
@@ -29,6 +30,14 @@ class BayesLearn():
         def set_train_type(self, train_less, train_improved):
             self.train_less = train_less
             self.train_improved = train_improved
+            if self.train_improved != 0:
+                # get stop words from stopwords.txt
+                try:
+                    with open('stopwords.txt', 'r', encoding='latin1') as file_handler:
+                        file_content = file_handler.read()
+                        self.stop_words = file_content.split()
+                except:
+                    return
 
         # procedure to recursively determine all the spam and ham directories
         # and store in spam_dirs and ham_dirs
@@ -51,6 +60,17 @@ class BayesLearn():
         def train_model(self):
             self.bayes_train(self.spam_dirs, "spam")
             self.bayes_train(self.ham_dirs, "ham")
+            if self.train_improved != 0:
+                self.post_train_filter()
+
+        def filter_token(self, token):
+            if re.match(r'^[_\W]+$', token):
+                return True
+            if token in self.stop_words:
+                return True
+            if token.isdigit():
+                return True
+            return False
 
         def bayes_train(self, type_dir, type_mail):
             for single_dir in type_dir:
@@ -74,8 +94,9 @@ class BayesLearn():
                         tokens = file_content.split()
                         for token in tokens:
                             if self.train_improved != 0:
-                                if re.match(r'^[_\W]+$', token):
+                                if self.filter_token(token):
                                     continue
+                                token = token.lower()
                             if type_mail == "spam":
                                 self.spam_words += 1
                             elif type_mail == "ham":
@@ -90,6 +111,25 @@ class BayesLearn():
                                     self.train_data[token.strip()] = [1, 0]
                                 elif type_mail == "ham":
                                     self.train_data[token.strip()] = [0, 1]
+
+        def post_train_filter(self):
+            # filter common words in both spam and ham
+            # check if a word occurs frequently in both spam and ham
+            spam_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][0], reverse=True)[:100]
+            ham_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][1], reverse=True)[:100]
+            high_freq_words = [word for word in spam_high_freq_words if word in ham_high_freq_words]
+            for word in high_freq_words:
+                del self.train_data[word]
+            """
+            for word, freq in self.train_data.copy().items():
+                spam_percent = (self.train_data[word][0] / self.spam_files) * 100
+                ham_percent = (self.train_data[word][1] / self.ham_files) * 100
+                if abs(spam_percent - ham_percent) < 0.0001:
+                    print(word)
+                    del self.train_data[word]
+                    self.spam_words -= 1
+                    self.ham_words -= 1
+            """
 
         def write_training_data(self, write_file):
             try:
