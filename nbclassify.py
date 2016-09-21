@@ -11,15 +11,7 @@ class BayesClassify():
             self.classify_dir = None
             self.prob_spam = 0
             self.prob_ham = 0
-
-            self.spam_dirs = []
-            self.ham_dirs = []
-            self.total_files = 0
-            self.spam_files = 0
-            self.ham_files = 0
             self.train_data = dict()
-            self.spam_words = 0
-            self.ham_words = 0
 
         def set_classify_dir(self, classify_dir):
             self.classify_dir = classify_dir
