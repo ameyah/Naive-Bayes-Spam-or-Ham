@@ -33,7 +33,7 @@ class BayesLearn():
             if self.train_improved != 0:
                 # get stop words from stopwords.txt
                 try:
-                    with open('stopwords.txt', 'r', encoding='latin1') as file_handler:
+                    with open('stopwords_long.txt', 'r', encoding='latin1') as file_handler:
                         file_content = file_handler.read()
                         self.stop_words = file_content.split()
                 except:
@@ -67,8 +67,6 @@ class BayesLearn():
             if re.match(r'^[_\W]+$', token):
                 return True
             if token in self.stop_words:
-                return True
-            if token.isdigit():
                 return True
             return False
 
@@ -115,21 +113,13 @@ class BayesLearn():
         def post_train_filter(self):
             # filter common words in both spam and ham
             # check if a word occurs frequently in both spam and ham
-            spam_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][0], reverse=True)[:100]
-            ham_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][1], reverse=True)[:100]
+            # remove first 1% high freq. words
+            top_1 = int(0.01 * len(self.train_data))
+            spam_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][0], reverse=True)[:top_1]
+            ham_high_freq_words = sorted(self.train_data, key=lambda x: self.train_data[x][1], reverse=True)[:top_1]
             high_freq_words = [word for word in spam_high_freq_words if word in ham_high_freq_words]
             for word in high_freq_words:
                 del self.train_data[word]
-            """
-            for word, freq in self.train_data.copy().items():
-                spam_percent = (self.train_data[word][0] / self.spam_files) * 100
-                ham_percent = (self.train_data[word][1] / self.ham_files) * 100
-                if abs(spam_percent - ham_percent) < 0.0001:
-                    print(word)
-                    del self.train_data[word]
-                    self.spam_words -= 1
-                    self.ham_words -= 1
-            """
 
         def write_training_data(self, write_file):
             try:

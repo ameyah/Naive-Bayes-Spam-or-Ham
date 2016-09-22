@@ -4,6 +4,8 @@ import math
 
 __author__ = 'ameya'
 
+mode = "PROD"
+
 
 class BayesClassify():
     class __BayesClassify():
@@ -48,8 +50,12 @@ class BayesClassify():
                     print(data)
 
         def classify_model(self, write_file):
-            wrong_spam = 0
-            wrong_ham = 0
+            correct_spam = 0
+            total_spam = 0
+            correct_ham = 0
+            total_ham = 0
+            classified_spam = 0
+            classified_ham = 0
             try:
                 with open(write_file, "w", encoding='latin1') as write_file_handler:
                     for current_dir, dirnames, filenames in os.walk(self.classify_dir):
@@ -80,13 +86,21 @@ class BayesClassify():
                                             except ValueError as e:
                                                 pass
                                     if prob_spam_word > prob_ham_word:
-                                        if "ham" in file_name:
-                                            wrong_spam += 1
-                                        write_file_handler.write("spam " + str(os.path.join(current_dir, file_name)) + '\n')
-                                    elif prob_ham_word > prob_spam_word:
                                         if "spam" in file_name:
-                                            wrong_ham += 1
+                                            total_spam += 1
+                                            correct_spam += 1
+                                        elif "ham" in file_name:
+                                            total_ham += 1
+                                        write_file_handler.write("spam " + str(os.path.join(current_dir, file_name)) + '\n')
+                                        classified_spam += 1
+                                    elif prob_ham_word > prob_spam_word:
+                                        if "ham" in file_name:
+                                            correct_ham += 1
+                                            total_ham += 1
+                                        elif "spam" in file_name:
+                                            total_spam += 1
                                         write_file_handler.write("ham " + str(os.path.join(current_dir, file_name)) + '\n')
+                                        classified_ham += 1
                                     else:
                                         # equal, so classify as spam
                                         # print("neither spam or ham: " + str(os.path.join(current_dir, file_name)) + " " + str(
@@ -96,8 +110,17 @@ class BayesClassify():
                                 continue
             except:
                 return
-            print("wrong spam: " + str(wrong_spam))
-            print("wrong ham: " + str(wrong_ham))
+            if mode == "DEV":
+                spam_precision = correct_spam / classified_spam
+                ham_precision = correct_ham / classified_ham
+                spam_recall = correct_spam / total_spam
+                ham_recall = correct_ham / total_ham
+                print("spam precision: " + str(spam_precision))
+                print("spam recall: " + str(spam_recall))
+                print("spam F1: " + str((2 * spam_precision * spam_recall)/(spam_precision + spam_recall)))
+                print("ham precision: " + str(ham_precision))
+                print("ham recall: " + str(ham_recall))
+                print("ham F1: " + str((2 * ham_precision * ham_recall)/(ham_precision + ham_recall)))
 
     __instance = None
 
