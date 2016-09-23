@@ -111,16 +111,36 @@ class BayesClassify():
             except:
                 return
             if mode == "DEV":
-                spam_precision = correct_spam / classified_spam
-                ham_precision = correct_ham / classified_ham
-                spam_recall = correct_spam / total_spam
-                ham_recall = correct_ham / total_ham
+                try:
+                    spam_precision = correct_spam / classified_spam
+                except ZeroDivisionError as e:
+                    spam_precision = float(0)
+                try:
+                    ham_precision = correct_ham / classified_ham
+                except ZeroDivisionError as e:
+                    ham_precision = float(0)
+                try:
+                    spam_recall = correct_spam / total_spam
+                except ZeroDivisionError as e:
+                    spam_recall = float(0)
+                try:
+                    ham_recall = correct_ham / total_ham
+                except ZeroDivisionError as e:
+                    ham_recall = float(0)
+                try:
+                    spam_f1 = (2 * spam_precision * spam_recall)/(spam_precision + spam_recall)
+                except ZeroDivisionError as e:
+                    spam_f1 = float(0)
+                try:
+                    ham_f1 = (2 * ham_precision * ham_recall)/(ham_precision + ham_recall)
+                except ZeroDivisionError as e:
+                    ham_f1 = float(0)
                 print("spam precision: " + str(spam_precision))
                 print("spam recall: " + str(spam_recall))
-                print("spam F1: " + str((2 * spam_precision * spam_recall)/(spam_precision + spam_recall)))
+                print("spam F1: " + str(spam_f1))
                 print("ham precision: " + str(ham_precision))
                 print("ham recall: " + str(ham_recall))
-                print("ham F1: " + str((2 * ham_precision * ham_recall)/(ham_precision + ham_recall)))
+                print("ham F1: " + str(ham_f1))
 
     __instance = None
 
