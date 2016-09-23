@@ -165,6 +165,6 @@ def get_classify_dir():
 
 if __name__ == '__main__':
     classify_instance = BayesClassify()
-    classify_instance.set_classify_dir(get_classify_dir())
+    classify_instance.set_classify_dir(os.path.abspath(get_classify_dir()))
     classify_instance.cache_training_model('nbmodel.txt')
     classify_instance.classify_model('nboutput.txt')
