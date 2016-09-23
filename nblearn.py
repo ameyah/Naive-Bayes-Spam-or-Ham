@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import math
 
 __author__ = 'ameya'
 
@@ -53,9 +54,9 @@ class BayesLearn():
                     self.ham_files += len(filenames)
                     self.ham_dirs.append(current_dir)
             if self.train_less != 0:
-                self.less_files = int((self.train_less / 100) * self.total_files)
-                self.less_spam_files = int(self.less_files / 2)
-                self.less_ham_files = self.less_files - self.less_spam_files
+                # self.less_files = int((self.train_less / 100) * self.total_files)
+                self.less_spam_files = math.ceil((self.train_less / 100) * self.spam_files)
+                self.less_ham_files = math.ceil((self.train_less / 100) * self.ham_files)
 
         def train_model(self):
             self.bayes_train(self.spam_dirs, "spam")
